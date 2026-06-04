@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Registro de huéspedes · Duplex Poble Sec</title>
+<title>Registro de huespedes - Duplex Poble Sec</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#111;min-height:100vh;}
@@ -36,12 +36,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ba{background:#E6F1FB;color:#185FA5;font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600;}
 .bp{width:100%;padding:13px;background:#111;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:0.5rem;}
 .bp:active{opacity:0.85;}
+.bp:disabled{opacity:0.5;}
 .bs{width:100%;padding:10px;background:transparent;border:1px solid #ccc;border-radius:10px;font-size:14px;cursor:pointer;color:#111;margin-top:8px;}
 .sbox{background:#f0faf5;border:1px solid #a3d9be;border-radius:12px;padding:1rem 1.25rem;}
 .sok{font-weight:600;font-size:15px;margin-bottom:8px;color:#0F6E56;}
 .tp{font-family:monospace;font-size:10px;background:#f5f5f5;border-radius:8px;padding:8px;color:#333;white-space:pre;overflow-x:auto;margin-top:6px;}
 .step{display:none;}.step.on{display:block;}
 .bdl{width:100%;padding:13px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:1rem;}
+.bdl:disabled{opacity:0.6;}
 </style>
 </head>
 <body>
@@ -83,7 +85,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="fi"><label id="ltpago"></label>
     <select id="tpago">
       <option value="PLATF" id="op_PLATF"></option>
-      <option value="PLATF2" id="op_PLATF2"></option>
+      <option value="PLATF" id="op_PLATF2"></option>
       <option value="TARJT" id="op_TARJT"></option>
       <option value="EFECT" id="op_EFECT"></option>
       <option value="TRANS" id="op_TRANS"></option>
@@ -97,15 +99,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="step" id="sg"></div>
 <div class="step" id="sd">
   <div class="sbox">
-    <p class="sok">OK <span id="lok"></span></p>
+    <p class="sok" id="lok"></p>
     <p id="lrdy" style="font-size:13px;color:#0F6E56;margin-bottom:10px;"></p>
-    <p style="font-size:12px;color:#0F6E56;margin-bottom:4px;" id="lfn"></p>
-    <div class="tp" id="fnp"></div>
-    <p style="font-size:12px;color:#0F6E56;margin:12px 0 4px;" id="lpv"></p>
-    <div class="tp" id="txp"></div>
-    <button class="bdl" onclick="dlAndSend()">Descargar TXT + Enviar email</button>
-    <p id="sendStatus" style="font-size:12px;color:#0F6E56;margin-top:8px;text-align:center;min-height:18px;"></p>
-    <button class="bs" onclick="rst()" id="bnw"></button>
+    <button class="bdl" id="btnSend" onclick="enviarDatos()"><span id="bdl"></span></button>
+    <p id="sendStatus" style="font-size:13px;text-align:center;margin-top:10px;min-height:20px;font-weight:500;"></p>
+    <button class="bs" onclick="rst()" id="bnw" style="margin-top:1rem;"></button>
   </div>
 </div>
 </div>
@@ -114,34 +112,31 @@ const NOM_EST="DUPLEX POBLE SEC";
 const COD_EST="ID50003479";
 const PROV_BCN="08";
 const MUN_BCN="080193";
-const EMAIL_DEST="tapiolesbajosdos@gmail.com";
+const WEBHOOK="https://hook.eu1.make.com/88r7y2sbtcperb6gs643c2gclhmkxru4";
 
 const PAR={
-  es:[["","-- Selecciona --"],["CY","Conyuge / pareja"],["HJ","Hijo/a"],["PM","Padre / madre"],["HR","Hermano/a"],["AB","Abuelo/a"],["NI","Nieto/a"],["TI","Tio/a"],["SB","Sobrino/a"],["SG","Suegro/a"],["YN","Yerno / nuera"],["CD","Cunado/a"],["TU","Tutor/a"],["OT","Otros"]],
-  en:[["","-- Select --"],["CY","Spouse / partner"],["HJ","Son / daughter"],["PM","Father / mother"],["HR","Sibling"],["AB","Grandparent"],["NI","Grandchild"],["TI","Uncle / aunt"],["SB","Nephew / niece"],["SG","Parent-in-law"],["YN","Son/daughter-in-law"],["CD","Brother/sister-in-law"],["TU","Guardian"],["OT","Other"]],
-  fr:[["","-- Selectionner --"],["CY","Conjoint / partenaire"],["HJ","Fils / fille"],["PM","Pere / mere"],["HR","Frere / soeur"],["AB","Grand-parent"],["NI","Petit-enfant"],["TI","Oncle / tante"],["SB","Neveu / niece"],["SG","Beau-parent"],["YN","Gendre / belle-fille"],["CD","Beau-frere / belle-soeur"],["TU","Tuteur"],["OT","Autre"]],
-  de:[["","-- Auswahlen --"],["CY","Ehepartner / Partner"],["HJ","Sohn / Tochter"],["PM","Vater / Mutter"],["HR","Geschwister"],["AB","Grosselternteil"],["NI","Enkelkind"],["TI","Onkel / Tante"],["SB","Neffe / Nichte"],["SG","Schwiegerelternteil"],["YN","Schwiegersohn/-tochter"],["CD","Schwager / Schwaegerin"],["TU","Vormund"],["OT","Andere"]]
+  es:[["","-- Selecciona --"],["CY","Conyuge/pareja"],["HJ","Hijo/a"],["PM","Padre/madre"],["HR","Hermano/a"],["AB","Abuelo/a"],["NI","Nieto/a"],["TI","Tio/a"],["SB","Sobrino/a"],["SG","Suegro/a"],["YN","Yerno/nuera"],["CD","Cunado/a"],["TU","Tutor/a"],["OT","Otros"]],
+  en:[["","-- Select --"],["CY","Spouse/partner"],["HJ","Son/daughter"],["PM","Father/mother"],["HR","Sibling"],["AB","Grandparent"],["NI","Grandchild"],["TI","Uncle/aunt"],["SB","Nephew/niece"],["SG","Parent-in-law"],["YN","Son/daughter-in-law"],["CD","Brother/sister-in-law"],["TU","Guardian"],["OT","Other"]],
+  fr:[["","-- Selectionner --"],["CY","Conjoint/partenaire"],["HJ","Fils/fille"],["PM","Pere/mere"],["HR","Frere/soeur"],["AB","Grand-parent"],["NI","Petit-enfant"],["TI","Oncle/tante"],["SB","Neveu/niece"],["SG","Beau-parent"],["YN","Gendre/belle-fille"],["CD","Beau-frere/belle-soeur"],["TU","Tuteur"],["OT","Autre"]],
+  de:[["","-- Auswahlen --"],["CY","Ehepartner/Partner"],["HJ","Sohn/Tochter"],["PM","Vater/Mutter"],["HR","Geschwister"],["AB","Grosselternteil"],["NI","Enkelkind"],["TI","Onkel/Tante"],["SB","Neffe/Nichte"],["SG","Schwiegerelternteil"],["YN","Schwiegersohn/-tochter"],["CD","Schwager/Schwaegerin"],["TU","Vormund"],["OT","Andere"]]
 };
 const DOC={
-  es:[["D","DNI / NIF"],["N","NIE"],["P","Pasaporte"],["O","Otro documento"]],
-  en:[["D","DNI / NIF"],["N","NIE (Spain)"],["P","Passport"],["O","Other document"]],
-  fr:[["D","DNI / NIF"],["N","NIE (Espagne)"],["P","Passeport"],["O","Autre document"]],
-  de:[["D","DNI / NIF"],["N","NIE (Spanien)"],["P","Reisepass"],["O","Sonstiges"]]
+  es:[["D","DNI/NIF"],["N","NIE"],["P","Pasaporte"],["O","Otro documento"]],
+  en:[["D","DNI/NIF"],["N","NIE (Spain)"],["P","Passport"],["O","Other document"]],
+  fr:[["D","DNI/NIF"],["N","NIE (Espagne)"],["P","Passeport"],["O","Autre document"]],
+  de:[["D","DNI/NIF"],["N","NIE (Spanien)"],["P","Reisepass"],["O","Sonstiges"]]
 };
 const PAGO={
   es:{"PLATF":"Airbnb (plataforma)","PLATF2":"VRBO (plataforma)","TARJT":"Tarjeta de credito","EFECT":"Efectivo","TRANS":"Transferencia","MOVIL":"Pago movil","DESTI":"Pago en destino","OTRO":"Otros"},
   en:{"PLATF":"Airbnb (platform)","PLATF2":"VRBO (platform)","TARJT":"Credit card","EFECT":"Cash","TRANS":"Bank transfer","MOVIL":"Mobile payment","DESTI":"Pay on arrival","OTRO":"Other"},
-  fr:{"PLATF":"Airbnb (plateforme)","PLATF2":"VRBO (plateforme)","TARJT":"Carte de credit","EFECT":"Especes","TRANS":"Virement","MOVIL":"Paiement mobile","DESTI":"Paiement a l'arrivee","OTRO":"Autre"},
+  fr:{"PLATF":"Airbnb (plateforme)","PLATF2":"VRBO (plateforme)","TARJT":"Carte de credit","EFECT":"Especes","TRANS":"Virement","MOVIL":"Paiement mobile","DESTI":"Paiement a l arrivee","OTRO":"Autre"},
   de:{"PLATF":"Airbnb (Plattform)","PLATF2":"VRBO (Plattform)","TARJT":"Kreditkarte","EFECT":"Bargeld","TRANS":"Ueberweisung","MOVIL":"Mobile Zahlung","DESTI":"Zahlung bei Ankunft","OTRO":"Sonstiges"}
 };
-// VRBO tambien es PLATF en el codigo Mossos
-const PAGO_CODE={"PLATF":"PLATF","PLATF2":"PLATF","TARJT":"TARJT","EFECT":"EFECT","TRANS":"TRANS","MOVIL":"MOVIL","DESTI":"DESTI","OTRO":"OTRO"};
-
 const TX={
-  es:{wp1:"Estamos encantados de que se aloje en nuestro Fantastico Duplex Estilo Loft en Barcelona y esperamos que disfrute de una estancia comoda y agradable.",wp2:"De conformidad con la normativa local, todos los huespedes deben rellenar un formulario de registro con sus datos personales. Esta informacion se comunicara a las autoridades locales.",wp3:"Le rogamos que rellene el formulario lo antes posible incluyendo todos los miembros del grupo. Los menores tambien deben registrarse.",wp4:"Sus datos se trataran con cuidado y usados estrictamente para el registro legal. Ante cualquier duda, contacte con nosotros.",wth:"Gracias por su colaboracion. Disfrute de su estancia!",res:"Datos de la reserva",ref:"Referencia reserva *",ent:"Fecha entrada *",sal:"Fecha salida *",hin:"Hora entrada *",hout:"Hora salida *",num:"Numero de huespedes *",tpago:"Forma de pago *",sel:"Selecciona...",cont:"Continuar",hue:"Huesped",de:"de",tit:"Titular",aco:"Acompanante",nom:"Nombre *",a1:"Primer apellido *",a2:"Segundo apellido",sx:"Sexo",td:"Tipo documento *",nd:"No documento *",sop:"No soporte doc.",fexp:"Fecha expedicion",fn:"Fecha nacimiento *",nac:"Nacionalidad ISO *",res2:"Direccion *",cp:"Codigo postal *",loc:"Localidad *",pais:"Pais ISO *",em:"Email",tel:"Telefono",htel:"Se convierte automaticamente al formato correcto",par:"Relacion con titular *",sig:"Siguiente huesped",fin:"Finalizar y generar TXT",ok:"Registro completado",rdy:"Fichero listo para subir a los Mossos.",fnl:"Fichero:",pvl:"Vista previa:",dl:"Descargar TXT + Enviar email",nw:"Nuevo registro",sm:"Masculino",sf:"Femenino",so:"Otro",af:"Por favor rellena todos los campos obligatorios (*)",ar:"Por favor completa todos los datos de la reserva.",sent:"Abriendo cliente de correo...",pn:"Maria",pa1:"Garcia",pa2:"",pnac:"ESP",pr:"Calle Mayor 1",pcp:"08001",ploc:"Barcelona",ppais:"ESP",pe:"correo@email.com",pt:""},
-  en:{wp1:"We are delighted to have you staying at our Fantastic Duplex Estilo Loft in Barcelona and hope you enjoy a comfortable and pleasant stay.",wp2:"In accordance with local regulations, all guests must complete a registration form. This information will be communicated to local authorities as required by law.",wp3:"Please complete the form as soon as possible, including all members of your group. Minors must also be registered.",wp4:"Your data will be handled with care and used strictly for legal registration. If you have any questions, please contact us.",wth:"Thank you for your cooperation. Enjoy your stay!",res:"Booking details",ref:"Booking reference *",ent:"Check-in date *",sal:"Check-out date *",hin:"Check-in time *",hout:"Check-out time *",num:"Number of guests *",tpago:"Payment method *",sel:"Select...",cont:"Continue",hue:"Guest",de:"of",tit:"Lead guest",aco:"Companion",nom:"First name *",a1:"First surname *",a2:"Second surname",sx:"Sex",td:"Document type *",nd:"Document number *",sop:"Support number",fexp:"Issue date",fn:"Date of birth *",nac:"Nationality ISO *",res2:"Address *",cp:"Postal code *",loc:"City *",pais:"Country ISO *",em:"Email",tel:"Phone",htel:"Any format accepted - auto-converted to required format",par:"Relation to lead guest *",sig:"Next guest",fin:"Finish and generate TXT",ok:"Registration complete",rdy:"File ready to upload to Mossos.",fnl:"File:",pvl:"Preview:",dl:"Download TXT + Send email",nw:"New registration",sm:"Male",sf:"Female",so:"Other",af:"Please fill in all required fields (*)",ar:"Please complete all booking details.",sent:"Opening email client...",pn:"Maria",pa1:"Smith",pa2:"",pnac:"USA",pr:"123 Main Street",pcp:"10001",ploc:"New York",ppais:"USA",pe:"email@example.com",pt:""},
-  fr:{wp1:"Nous sommes ravis de vous accueillir dans notre Fantastique Duplex Estilo Loft a Barcelone et esperons que vous passerez un sejour agreable.",wp2:"Conformement a la reglementation locale, tous les voyageurs doivent remplir un formulaire d'enregistrement. Ces informations seront communiquees aux autorites locales.",wp3:"Veuillez remplir le formulaire des que possible, y compris pour tous les membres du groupe. Les mineurs doivent egalement etre enregistres.",wp4:"Vos donnees seront utilisees strictement a des fins legales. Pour toute question, contactez-nous.",wth:"Merci pour votre collaboration. Profitez de votre sejour!",res:"Details reservation",ref:"Reference reservation *",ent:"Date arrivee *",sal:"Date depart *",hin:"Heure arrivee *",hout:"Heure depart *",num:"Nombre voyageurs *",tpago:"Mode paiement *",sel:"Selectionner...",cont:"Continuer",hue:"Voyageur",de:"sur",tit:"Voyageur principal",aco:"Accompagnant",nom:"Prenom *",a1:"Premier nom *",a2:"Deuxieme nom",sx:"Sexe",td:"Type document *",nd:"Numero document *",sop:"Numero support",fexp:"Date emission",fn:"Date naissance *",nac:"Nationalite ISO *",res2:"Adresse *",cp:"Code postal *",loc:"Ville *",pais:"Pays ISO *",em:"Email",tel:"Telephone",htel:"Tout format accepte - converti automatiquement",par:"Lien voyageur principal *",sig:"Voyageur suivant",fin:"Terminer et generer TXT",ok:"Enregistrement termine",rdy:"Fichier pret pour les Mossos.",fnl:"Fichier:",pvl:"Apercu:",dl:"Telecharger TXT + Envoyer email",nw:"Nouvel enregistrement",sm:"Masculin",sf:"Feminin",so:"Autre",af:"Veuillez remplir tous les champs obligatoires (*)",ar:"Veuillez completer tous les details.",sent:"Ouverture client email...",pn:"Marie",pa1:"Dupont",pa2:"",pnac:"FRA",pr:"10 rue de la Paix",pcp:"75001",ploc:"Paris",ppais:"FRA",pe:"email@exemple.fr",pt:""},
-  de:{wp1:"Wir freuen uns, Sie in unserem Fantastischen Duplex Estilo Loft in Barcelona begrussen zu durfen und hoffen, dass Sie einen angenehmen Aufenthalt geniessen.",wp2:"Gemas den ortlichen Vorschriften mussen alle Gaste ein Anmeldeformular ausfuellen. Diese Informationen werden an die Behorden weitergeleitet.",wp3:"Bitte fullen Sie das Formular so bald wie moglich aus, auch fur alle Mitreisenden. Minderjahrige mussen ebenfalls registriert werden.",wp4:"Ihre Daten werden ausschliesslich fur die Registrierung verwendet. Bei Fragen kontaktieren Sie uns.",wth:"Vielen Dank. Geniessen Sie Ihren Aufenthalt!",res:"Buchungsdetails",ref:"Buchungsreferenz *",ent:"Anreisedatum *",sal:"Abreisedatum *",hin:"Anreisezeit *",hout:"Abreisezeit *",num:"Anzahl Gaste *",tpago:"Zahlungsart *",sel:"Auswahlen...",cont:"Weiter",hue:"Gast",de:"von",tit:"Hauptgast",aco:"Begleitung",nom:"Vorname *",a1:"Erster Nachname *",a2:"Zweiter Nachname",sx:"Geschlecht",td:"Dokumententyp *",nd:"Dokumentennummer *",sop:"Seriennummer",fexp:"Ausstellungsdatum",fn:"Geburtsdatum *",nac:"Nationalitat ISO *",res2:"Anschrift *",cp:"Postleitzahl *",loc:"Stadt *",pais:"Land ISO *",em:"E-Mail",tel:"Telefon",htel:"Jedes Format - wird automatisch konvertiert",par:"Verhaltnis Hauptgast *",sig:"Nachster Gast",fin:"Abschliessen und TXT generieren",ok:"Registrierung abgeschlossen",rdy:"Datei bereit zum Hochladen.",fnl:"Datei:",pvl:"Vorschau:",dl:"TXT herunterladen + E-Mail senden",nw:"Neue Registrierung",sm:"Mannlich",sf:"Weiblich",so:"Andere",af:"Bitte alle Pflichtfelder ausfuellen (*)",ar:"Bitte alle Buchungsdetails ausfuellen.",sent:"E-Mail-Client wird geoffnet...",pn:"Anna",pa1:"Muller",pa2:"",pnac:"DEU",pr:"Hauptstrasse 1",pcp:"10115",ploc:"Berlin",ppais:"DEU",pe:"email@beispiel.de",pt:""}
+  es:{wp1:"Estamos encantados de que se aloje en nuestro Fantastico Duplex Estilo Loft en Barcelona y esperamos que disfrute de una estancia comoda y agradable.",wp2:"De conformidad con la normativa local, todos los huespedes deben rellenar un formulario de registro con sus datos personales. Esta informacion se comunicara a las autoridades locales.",wp3:"Le rogamos que rellene el formulario lo antes posible incluyendo todos los miembros del grupo. Los menores tambien deben registrarse.",wp4:"Sus datos se trataran con cuidado y usados estrictamente para el registro legal. Ante cualquier duda, contacte con nosotros.",wth:"Gracias por su colaboracion. Disfrute de su estancia!",res:"Datos de la reserva",ref:"Referencia reserva *",ent:"Fecha entrada *",sal:"Fecha salida *",hin:"Hora entrada *",hout:"Hora salida *",num:"Numero de huespedes *",tpago:"Forma de pago *",sel:"Selecciona...",cont:"Continuar",hue:"Huesped",de:"de",tit:"Titular",aco:"Acompanante",nom:"Nombre *",a1:"Primer apellido *",a2:"Segundo apellido",sx:"Sexo",td:"Tipo documento *",nd:"No documento *",sop:"No soporte doc.",fexp:"Fecha expedicion",fn:"Fecha nacimiento *",nac:"Nacionalidad ISO *",res2:"Direccion *",cp:"Codigo postal *",loc:"Localidad *",pais:"Pais ISO *",em:"Email",tel:"Telefono",htel:"Cualquier formato - se convierte automaticamente",par:"Relacion con titular *",sig:"Siguiente huesped",fin:"Finalizar",ok:"Registro completado",rdy:"Pulsa el boton para enviar los datos.",dl:"Enviar datos",sending:"Enviando datos...",sent:"Datos enviados correctamente",fallback:"Error de envio. Por favor contacta con nosotros.",nw:"Nuevo registro",sm:"Masculino",sf:"Femenino",so:"Otro",af:"Por favor rellena todos los campos obligatorios (*)",ar:"Por favor completa todos los datos de la reserva."},
+  en:{wp1:"We are delighted to have you staying at our Fantastic Duplex Estilo Loft in Barcelona and hope you enjoy a comfortable and pleasant stay.",wp2:"In accordance with local regulations, all guests must complete a registration form. This information will be communicated to local authorities as required by law.",wp3:"Please complete the form as soon as possible, including all members of your group. Minors must also be registered.",wp4:"Your data will be handled with care and used strictly for legal registration. If you have any questions, please contact us.",wth:"Thank you for your cooperation. Enjoy your stay!",res:"Booking details",ref:"Booking reference *",ent:"Check-in date *",sal:"Check-out date *",hin:"Check-in time *",hout:"Check-out time *",num:"Number of guests *",tpago:"Payment method *",sel:"Select...",cont:"Continue",hue:"Guest",de:"of",tit:"Lead guest",aco:"Companion",nom:"First name *",a1:"First surname *",a2:"Second surname",sx:"Sex",td:"Document type *",nd:"Document number *",sop:"Support number",fexp:"Issue date",fn:"Date of birth *",nac:"Nationality ISO *",res2:"Address *",cp:"Postal code *",loc:"City *",pais:"Country ISO *",em:"Email",tel:"Phone",htel:"Any format accepted - auto-converted",par:"Relation to lead guest *",sig:"Next guest",fin:"Finish",ok:"Registration complete",rdy:"Press the button to send your data.",dl:"Send data",sending:"Sending data...",sent:"Data sent successfully",fallback:"Send error. Please contact us.",nw:"New registration",sm:"Male",sf:"Female",so:"Other",af:"Please fill in all required fields (*)",ar:"Please complete all booking details."},
+  fr:{wp1:"Nous sommes ravis de vous accueillir dans notre Fantastique Duplex Estilo Loft a Barcelone et esperons que vous passerez un sejour agreable.",wp2:"Conformement a la reglementation locale, tous les voyageurs doivent remplir un formulaire d enregistrement. Ces informations seront communiquees aux autorites locales.",wp3:"Veuillez remplir le formulaire des que possible, y compris pour tous les membres du groupe. Les mineurs doivent egalement etre enregistres.",wp4:"Vos donnees seront utilisees strictement a des fins legales. Pour toute question, contactez-nous.",wth:"Merci pour votre collaboration. Profitez de votre sejour!",res:"Details reservation",ref:"Reference reservation *",ent:"Date arrivee *",sal:"Date depart *",hin:"Heure arrivee *",hout:"Heure depart *",num:"Nombre voyageurs *",tpago:"Mode paiement *",sel:"Selectionner...",cont:"Continuer",hue:"Voyageur",de:"sur",tit:"Voyageur principal",aco:"Accompagnant",nom:"Prenom *",a1:"Premier nom *",a2:"Deuxieme nom",sx:"Sexe",td:"Type document *",nd:"Numero document *",sop:"Numero support",fexp:"Date emission",fn:"Date naissance *",nac:"Nationalite ISO *",res2:"Adresse *",cp:"Code postal *",loc:"Ville *",pais:"Pays ISO *",em:"Email",tel:"Telephone",htel:"Tout format accepte - converti automatiquement",par:"Lien voyageur principal *",sig:"Voyageur suivant",fin:"Terminer",ok:"Enregistrement termine",rdy:"Appuyez sur le bouton pour envoyer vos donnees.",dl:"Envoyer les donnees",sending:"Envoi en cours...",sent:"Donnees envoyees avec succes",fallback:"Erreur d envoi. Veuillez nous contacter.",nw:"Nouvel enregistrement",sm:"Masculin",sf:"Feminin",so:"Autre",af:"Veuillez remplir tous les champs obligatoires (*)",ar:"Veuillez completer tous les details."},
+  de:{wp1:"Wir freuen uns, Sie in unserem Fantastischen Duplex Estilo Loft in Barcelona begrussen zu durfen und hoffen, dass Sie einen angenehmen Aufenthalt geniessen.",wp2:"Gemas den ortlichen Vorschriften mussen alle Gaste ein Anmeldeformular ausfuellen. Diese Informationen werden an die Behorden weitergeleitet.",wp3:"Bitte fullen Sie das Formular so bald wie moglich aus, auch fur alle Mitreisenden. Minderjahrige mussen ebenfalls registriert werden.",wp4:"Ihre Daten werden ausschliesslich fur die Registrierung verwendet. Bei Fragen kontaktieren Sie uns.",wth:"Vielen Dank. Geniessen Sie Ihren Aufenthalt!",res:"Buchungsdetails",ref:"Buchungsreferenz *",ent:"Anreisedatum *",sal:"Abreisedatum *",hin:"Anreisezeit *",hout:"Abreisezeit *",num:"Anzahl Gaste *",tpago:"Zahlungsart *",sel:"Auswahlen...",cont:"Weiter",hue:"Gast",de:"von",tit:"Hauptgast",aco:"Begleitung",nom:"Vorname *",a1:"Erster Nachname *",a2:"Zweiter Nachname",sx:"Geschlecht",td:"Dokumententyp *",nd:"Dokumentennummer *",sop:"Seriennummer",fexp:"Ausstellungsdatum",fn:"Geburtsdatum *",nac:"Nationalitat ISO *",res2:"Anschrift *",cp:"Postleitzahl *",loc:"Stadt *",pais:"Land ISO *",em:"E-Mail",tel:"Telefon",htel:"Jedes Format - wird automatisch konvertiert",par:"Verhaltnis Hauptgast *",sig:"Nachster Gast",fin:"Abschliessen",ok:"Registrierung abgeschlossen",rdy:"Druecken Sie den Knopf, um die Daten zu senden.",dl:"Daten senden",sending:"Daten werden gesendet...",sent:"Daten erfolgreich gesendet",fallback:"Sendefehler. Bitte kontaktieren Sie uns.",nw:"Neue Registrierung",sm:"Mannlich",sf:"Weiblich",so:"Andere",af:"Bitte alle Pflichtfelder ausfuellen (*)",ar:"Bitte alle Buchungsdetails ausfuellen."}
 };
 
 let lang="es",nG=0,cur=0,gD=[],seq=1;
@@ -150,7 +145,7 @@ const t=k=>TX[lang][k]||"";
 function sL(l){lang=l;document.querySelectorAll(".lb").forEach((b,i)=>b.classList.toggle("on",["es","en","fr","de"][i]===l));aL();}
 
 function aL(){
-  const m={wp1:"wp1",wp2:"wp2",wp3:"wp3",wp4:"wp4",wth:"wth",lres:"res",lref:"ref",lin:"ent",lout:"sal",lhin:"hin",lhout:"hout",lnum:"num",ltpago:"tpago",osel:"sel",bcont:"cont",lok:"ok",lrdy:"rdy",lfn:"fnl",lpv:"pvl",bnw:"nw"};
+  const m={wp1:"wp1",wp2:"wp2",wp3:"wp3",wp4:"wp4",wth:"wth",lres:"res",lref:"ref",lin:"ent",lout:"sal",lhin:"hin",lhout:"hout",lnum:"num",ltpago:"tpago",osel:"sel",bcont:"cont",lok:"ok",lrdy:"rdy",bdl:"dl",bnw:"nw"};
   for(const[id,k]of Object.entries(m)){const el=document.getElementById(id);if(el)el.textContent=t(k);}
   const pg=PAGO[lang];
   Object.keys(pg).forEach(v=>{const el=document.getElementById("op_"+v);if(el)el.textContent=pg[v];});
@@ -169,21 +164,13 @@ function go(){
   showG();
 }
 
-// Convierte cualquier formato de telefono al requerido: 00XXXXXXXXXXX
 function normTel(raw){
   if(!raw||!raw.trim())return "";
-  // quitar todo excepto digitos y el + inicial
   let s=raw.trim();
-  // si empieza por + sustituir por 00
   if(s.startsWith("+"))s="00"+s.slice(1);
-  // quitar espacios, guiones, parentesis, puntos
-  s=s.replace(/[\s\-\(\)\.\,]/g,"");
-  // si empieza por 00 ya esta bien
+  s=s.replace(/[\s\-\(\)\.]/g,"");
   if(s.startsWith("00"))return s;
-  // si empieza por 0 solo (ej: 0034...) dejarlo
-  if(s.startsWith("0"))return "0"+s;
-  // si es un numero sin prefijo (ej: 612345678 espanol) asumir 0034
-  return "0034"+s;
+  return s;
 }
 
 function showG(){
@@ -195,11 +182,11 @@ function showG(){
   sg.innerHTML=`<div class="gc">
     <div class="gt">${t("hue")} ${cur+1} ${t("de")} ${nG} <span class="${isT?"bt":"ba"}">${isT?t("tit"):t("aco")}</span></div>
     <div class="tc">
-      <div class="fi"><label>${t("nom")}</label><input type="text" id="gnom" placeholder="${t("pn")}"/></div>
-      <div class="fi"><label>${t("a1")}</label><input type="text" id="ga1" placeholder="${t("pa1")}"/></div>
+      <div class="fi"><label>${t("nom")}</label><input type="text" id="gnom"/></div>
+      <div class="fi"><label>${t("a1")}</label><input type="text" id="ga1"/></div>
     </div>
     <div class="tc">
-      <div class="fi"><label>${t("a2")}</label><input type="text" id="ga2" placeholder="${t("pa2")}"/><div class="hint">Opcional</div></div>
+      <div class="fi"><label>${t("a2")}</label><input type="text" id="ga2"/><div class="hint">Opcional</div></div>
       <div class="fi"><label>${t("sx")}</label><select id="gsx"><option value="">--</option><option value="M">${t("sm")}</option><option value="F">${t("sf")}</option><option value="O">${t("so")}</option></select><div class="hint">Opcional</div></div>
     </div>
     <div class="tc">
@@ -207,44 +194,30 @@ function showG(){
       <div class="fi"><label>${t("nd")}</label><input type="text" id="gnd" placeholder="12345678Z"/></div>
     </div>
     <div class="tc">
-      <div class="fi"><label>${t("sop")}</label><input type="text" id="gsop" placeholder="AAA123456" maxlength="9"/><div class="hint">Solo DNI/NIE. 9 car. exactos. Opcional</div></div>
+      <div class="fi"><label>${t("sop")}</label><input type="text" id="gsop" maxlength="9"/><div class="hint">Solo DNI/NIE. 9 car. Opcional</div></div>
       <div class="fi"><label>${t("fexp")}</label><input type="date" id="gfexp"/><div class="hint">Opcional</div></div>
     </div>
     <div class="tc">
       <div class="fi"><label>${t("fn")}</label><input type="date" id="gfn"/></div>
-      <div class="fi"><label>${t("nac")}</label><input type="text" id="gnac" placeholder="${t("pnac")}" maxlength="3"/><div class="hint">ESP USA FRA DEU GBR ITA...</div></div>
+      <div class="fi"><label>${t("nac")}</label><input type="text" id="gnac" maxlength="3"/><div class="hint">ESP USA FRA DEU GBR...</div></div>
     </div>
-    <div class="fi"><label>${t("res2")}</label><input type="text" id="gres" placeholder="${t("pr")}"/></div>
+    <div class="fi"><label>${t("res2")}</label><input type="text" id="gres"/></div>
     <div class="tc">
-      <div class="fi"><label>${t("cp")}</label><input type="text" id="gcp" placeholder="${t("pcp")}"/></div>
-      <div class="fi"><label>${t("loc")}</label><input type="text" id="gloc" placeholder="${t("ploc")}"/></div>
+      <div class="fi"><label>${t("cp")}</label><input type="text" id="gcp"/></div>
+      <div class="fi"><label>${t("loc")}</label><input type="text" id="gloc"/></div>
     </div>
-    <div class="fi"><label>${t("pais")}</label><input type="text" id="gpais" placeholder="${t("ppais")}" maxlength="3"/><div class="hint">ISO 3166-1 Alfa-3. Ej: ESP USA FRA</div></div>
-    <div class="fi"><label>${t("em")}</label><input type="email" id="gem" placeholder="${t("pe")}"/><div class="hint">Opcional (pero email o telefono obligatorio)</div></div>
-    <div class="fi"><label>${t("tel")}</label><input type="tel" id="gtel" placeholder="+1 (212) 555-0100" onblur="autoFmtTel(this)"/><div class="hint">${t("htel")}</div></div>
+    <div class="fi"><label>${t("pais")}</label><input type="text" id="gpais" maxlength="3"/><div class="hint">ISO 3166-1 Alfa-3</div></div>
+    <div class="fi"><label>${t("em")}</label><input type="email" id="gem"/><div class="hint">Opcional (necesario email o telefono)</div></div>
+    <div class="fi"><label>${t("tel")}</label><input type="tel" id="gtel" onblur="this.value=normTel(this.value)"/><div class="hint">${t("htel")}</div></div>
     ${!isT?`<div class="fi"><label>${t("par")}</label><select id="gpar">${pOpts}</select></div>`:`<input type="hidden" id="gpar" value=""/>`}
   </div>
   <button class="bp" onclick="svG()">${cur<nG-1?t("sig"):t("fin")}</button>`;
   sg.className="step on";
 }
 
-function autoFmtTel(el){
-  const norm=normTel(el.value);
-  if(norm)el.value=norm;
-}
-
 function svG(){
   const req=["gnom","ga1","gtd","gnd","gfn","gnac","gres","gcp","gloc","gpais"];
-  const d={
-    nom:v("gnom"),a1:v("ga1"),a2:v("ga2")||"",
-    sx:v("gsx")||"",
-    td:v("gtd")||"P",nd:v("gnd"),
-    sop:v("gsop")||"",fexp:v("gfexp")||"",
-    fn:v("gfn"),nac:v("gnac"),
-    res:v("gres"),cp:v("gcp"),loc:v("gloc"),pais:v("gpais"),
-    em:v("gem")||"",tel:normTel(v("gtel")),
-    par:v("gpar")||""
-  };
+  const d={nom:v("gnom"),a1:v("ga1"),a2:v("ga2")||"",sx:v("gsx")||"",td:v("gtd")||"P",nd:v("gnd"),sop:v("gsop")||"",fexp:v("gfexp")||"",fn:v("gfn"),nac:v("gnac"),res:v("gres"),cp:v("gcp"),loc:v("gloc"),pais:v("gpais"),em:v("gem")||"",tel:normTel(v("gtel")),par:v("gpar")||""};
   if(req.some(id=>!v(id))){alert(t("af"));return;}
   if(!d.em&&!d.tel){alert(t("af")+" (email / "+t("tel")+")");return;}
   gD.push(d);cur++;
@@ -263,8 +236,7 @@ function genTxt(){
   const fOut=document.getElementById("fOut").value;
   const hIn=fmtH(document.getElementById("hIn").value||"15:00");
   const hOut=fmtH(document.getElementById("hOut").value||"12:00");
-  const tpagoRaw=document.getElementById("tpago").value||"PLATF";
-  const tpago=PAGO_CODE[tpagoRaw]||"PLATF";
+  const tpago=document.getElementById("tpago").value||"PLATF";
   const fn=`${COD_EST}.${String(seq).padStart(3,"0")}.txt`;
   const {d:nd,h:nh}=nowDT();
   const n=gD.length;
@@ -273,59 +245,38 @@ function genTxt(){
   gD.forEach((g,i)=>{
     const td=g.td||"P";
     const esSpain=(g.pais||"").toUpperCase()==="ESP";
-    // soporte: solo si DNI o NIE y tiene valor con 9 caracteres exactos
     const sop=(td==="D"||td==="N")&&g.sop&&g.sop.length===9?g.sop.toUpperCase():"";
-    const fields=[
-      "2",
-      (td==="D")?g.nd.toUpperCase():"",   // doc espanol
-      (td!=="D")?g.nd.toUpperCase():"",   // doc extranjero
-      td,
-      fmtD(g.fexp),                        // fecha expedicion (opcional)
-      g.a1.toUpperCase(),
-      g.a2.toUpperCase(),                  // 2o apellido (opcional, puede ser "")
-      g.nom.toUpperCase(),
-      g.sx,                                // sexo (opcional, puede ser "")
-      fmtD(g.fn),
-      (g.nac||"").toUpperCase(),           // nacionalidad (opcional)
-      fmtD(fIn),hIn,
-      fmtD(fOut),hOut,
-      nd,"R",ref,
-      String(n),"1","S",
-      tpago,
-      g.tel,                               // telefono normalizado
-      (i===0)?"":g.par,                   // parentesco (vacio para titular)
-      g.em,                               // email (opcional)
-      sop,                                // soporte (opcional)
-      g.res,
-      esSpain?PROV_BCN:"",               // provincia solo si ESP
-      esSpain?MUN_BCN:"",               // municipio solo si ESP
-      esSpain?"":g.loc,                 // localidad solo si no ESP
-      (g.pais||"").toUpperCase(),
-      g.cp
-    ];
+    const fields=["2",(td==="D")?g.nd.toUpperCase():"",(td!=="D")?g.nd.toUpperCase():"",td,fmtD(g.fexp),g.a1.toUpperCase(),g.a2.toUpperCase(),g.nom.toUpperCase(),g.sx,fmtD(g.fn),(g.nac||"").toUpperCase(),fmtD(fIn),hIn,fmtD(fOut),hOut,nd,"R",ref,String(n),"1","S",tpago,g.tel,(i===0)?"":g.par,g.em,sop,g.res,esSpain?PROV_BCN:"",esSpain?MUN_BCN:"",esSpain?"":g.loc,(g.pais||"").toUpperCase(),g.cp];
     lines.push(fields.join("|"));
   });
   window._tc=lines.join("\r\n");
   window._fn=fn;
-  document.getElementById("fnp").textContent=fn;
-  document.getElementById("txp").textContent=lines[0]+"\n"+lines[1].substring(0,100)+"...";
   upProg(nG,nG+2);aL();
   document.getElementById("sd").className="step on";
 }
 
-function dlAndSend(){
-  // Descarga el fichero
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([window._tc],{type:"text/plain;charset=utf-8"}));
-  a.download=window._fn;a.click();
+async function enviarDatos(){
+  const btn=document.getElementById("btnSend");
+  const status=document.getElementById("sendStatus");
+  btn.disabled=true;
+  status.style.color="#555";
+  status.textContent=t("sending");
+  try{
+    const resp=await fetch(WEBHOOK,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({filename:window._fn,content:window._tc,timestamp:new Date().toISOString()})
+    });
+    if(resp.ok){
+      status.style.color="#0F6E56";
+      status.textContent=t("sent");
+    }else{throw new Error(resp.status);}
+  }catch(e){
+    status.style.color="#c0392b";
+    status.textContent=t("fallback");
+  }
   seq=seq<999?seq+1:1;
-  // Abre mailto con el contenido
-  const subj=encodeURIComponent("Registro huespedes - "+window._fn);
-  const body=encodeURIComponent("Registro de huespedes.\nFichero: "+window._fn+"\n\n"+window._tc);
-  setTimeout(()=>{
-    window.location.href=`mailto:${EMAIL_DEST}?subject=${subj}&body=${body}`;
-    document.getElementById("sendStatus").textContent=t("sent");
-  },600);
+  btn.disabled=false;
 }
 
 function rst(){
