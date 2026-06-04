@@ -28,7 +28,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fi label{display:block;font-size:13px;color:#555;margin-bottom:4px;}
 .fi input,.fi select{width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:8px;font-size:14px;background:#fff;color:#111;-webkit-appearance:none;}
 .fi input:focus,.fi select:focus{outline:none;border-color:#111;}
+.fi input.ok{border-color:#1D9E75;}
+.fi input.err,.fi select.err{border-color:#c0392b;}
 .fi .hint{font-size:11px;color:#999;margin-top:3px;line-height:1.4;}
+.fi .hint.err{color:#c0392b;font-weight:500;}
+.fi .hint.ok{color:#1D9E75;}
 .tc{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .gc{background:#fff;border:1px solid #eee;border-radius:12px;padding:1rem;margin-bottom:1rem;}
 .gt{font-size:14px;font-weight:600;color:#111;margin-bottom:1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -39,8 +43,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bp:disabled{opacity:0.5;}
 .bs{width:100%;padding:10px;background:transparent;border:1px solid #ccc;border-radius:10px;font-size:14px;cursor:pointer;color:#111;margin-top:8px;}
 .sbox{background:#f0faf5;border:1px solid #a3d9be;border-radius:12px;padding:1rem 1.25rem;}
-.sok{font-weight:600;font-size:15px;margin-bottom:8px;color:#0F6E56;}
-.tp{font-family:monospace;font-size:10px;background:#f5f5f5;border-radius:8px;padding:8px;color:#333;white-space:pre;overflow-x:auto;margin-top:6px;}
 .step{display:none;}.step.on{display:block;}
 .bdl{width:100%;padding:13px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:1rem;}
 .bdl:disabled{opacity:0.6;}
@@ -68,9 +70,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="shdr" id="lres"></div>
   <div class="fi"><label id="lref"></label><input type="text" id="ref" placeholder="HM1234567890"/></div>
   <div class="tc">
-    <div class="fi"><label id="lin"></label><input type="date" id="fIn"/></div>
-    <div class="fi"><label id="lout"></label><input type="date" id="fOut"/></div>
+    <div class="fi"><label id="lin"></label><input type="date" id="fIn" onchange="valFechas()"/></div>
+    <div class="fi"><label id="lout"></label><input type="date" id="fOut" onchange="valFechas()"/></div>
   </div>
+  <div id="fechaErr" class="hint err" style="display:none;margin-bottom:8px;"></div>
   <div class="tc">
     <div class="fi"><label id="lhin"></label><input type="time" id="hIn" value="15:00"/></div>
     <div class="fi"><label id="lhout"></label><input type="time" id="hOut" value="12:00"/></div>
@@ -112,6 +115,199 @@ const PROV_BCN="08";
 const MUN_BCN="080193";
 const WEBHOOK="https://hook.eu1.make.com/88r7y2sbtcperb6gs643c2gclhmkxru4";
 
+// Lista de paises ISO 3166-1 Alpha-3 con nombres en 4 idiomas
+// [iso3, es, en, fr, de]
+const PAISES=[
+["AFG","Afganistan","Afghanistan","Afghanistan","Afghanistan"],
+["ALB","Albania","Albania","Albanie","Albanien"],
+["DEU","Alemania","Germany","Allemagne","Deutschland"],
+["AND","Andorra","Andorra","Andorre","Andorra"],
+["AGO","Angola","Angola","Angola","Angola"],
+["ARG","Argentina","Argentina","Argentine","Argentinien"],
+["ARM","Armenia","Armenia","Armenie","Armenien"],
+["AUS","Australia","Australia","Australie","Australien"],
+["AUT","Austria","Austria","Autriche","Oesterreich"],
+["AZE","Azerbaiyan","Azerbaijan","Azerbaidjan","Aserbaidschan"],
+["BHS","Bahamas","Bahamas","Bahamas","Bahamas"],
+["BGD","Bangladesh","Bangladesh","Bangladesh","Bangladesch"],
+["BEL","Belgica","Belgium","Belgique","Belgien"],
+["BLZ","Belice","Belize","Belize","Belize"],
+["BEN","Benin","Benin","Benin","Benin"],
+["BLR","Bielorrusia","Belarus","Bielorussie","Weissrussland"],
+["BOL","Bolivia","Bolivia","Bolivie","Bolivien"],
+["BIH","Bosnia","Bosnia","Bosnie","Bosnien"],
+["BWA","Botswana","Botswana","Botswana","Botswana"],
+["BRA","Brasil","Brazil","Bresil","Brasilien"],
+["BRN","Brunei","Brunei","Brunei","Brunei"],
+["BGR","Bulgaria","Bulgaria","Bulgarie","Bulgarien"],
+["BFA","Burkina Faso","Burkina Faso","Burkina Faso","Burkina Faso"],
+["BDI","Burundi","Burundi","Burundi","Burundi"],
+["BTN","Butan","Bhutan","Bhoutan","Bhutan"],
+["CPV","Cabo Verde","Cape Verde","Cap-Vert","Kap Verde"],
+["KHM","Camboya","Cambodia","Cambodge","Kambodscha"],
+["CMR","Camerun","Cameroon","Cameroun","Kamerun"],
+["CAN","Canada","Canada","Canada","Kanada"],
+["QAT","Catar","Qatar","Qatar","Katar"],
+["TCD","Chad","Chad","Tchad","Tschad"],
+["CHL","Chile","Chile","Chili","Chile"],
+["CHN","China","China","Chine","China"],
+["CYP","Chipre","Cyprus","Chypre","Zypern"],
+["COL","Colombia","Colombia","Colombie","Kolumbien"],
+["COM","Comoras","Comoros","Comores","Komoren"],
+["COD","Congo","Congo","Congo","Kongo"],
+["PRK","Corea del Norte","North Korea","Coree du Nord","Nordkorea"],
+["KOR","Corea del Sur","South Korea","Coree du Sud","Sudkorea"],
+["CRI","Costa Rica","Costa Rica","Costa Rica","Costa Rica"],
+["CIV","Costa de Marfil","Ivory Coast","Cote d Ivoire","Elfenbeinkuste"],
+["HRV","Croacia","Croatia","Croatie","Kroatien"],
+["CUB","Cuba","Cuba","Cuba","Kuba"],
+["DNK","Dinamarca","Denmark","Danemark","Danemark"],
+["DJI","Yibuti","Djibouti","Djibouti","Dschibuti"],
+["ECU","Ecuador","Ecuador","Equateur","Ecuador"],
+["EGY","Egipto","Egypt","Egypte","Agypten"],
+["SLV","El Salvador","El Salvador","El Salvador","El Salvador"],
+["ARE","Emiratos Arabes","UAE","Emirats Arabes","Vereinigte Arab. Emirate"],
+["ERI","Eritrea","Eritrea","Erythree","Eritrea"],
+["SVK","Eslovaquia","Slovakia","Slovaquie","Slowakei"],
+["SVN","Eslovenia","Slovenia","Slovenie","Slowenien"],
+["ESP","Espana","Spain","Espagne","Spanien"],
+["USA","Estados Unidos","United States","Etats-Unis","Vereinigte Staaten"],
+["EST","Estonia","Estonia","Estonie","Estland"],
+["ETH","Etiopia","Ethiopia","Ethiopie","Athiopien"],
+["PHL","Filipinas","Philippines","Philippines","Philippinen"],
+["FIN","Finlandia","Finland","Finlande","Finnland"],
+["FJI","Fiyi","Fiji","Fidji","Fidschi"],
+["FRA","Francia","France","France","Frankreich"],
+["GAB","Gabon","Gabon","Gabon","Gabun"],
+["GMB","Gambia","Gambia","Gambie","Gambia"],
+["GEO","Georgia","Georgia","Georgie","Georgien"],
+["GHA","Ghana","Ghana","Ghana","Ghana"],
+["GRC","Grecia","Greece","Grece","Griechenland"],
+["GTM","Guatemala","Guatemala","Guatemala","Guatemala"],
+["GIN","Guinea","Guinea","Guinee","Guinea"],
+["GNB","Guinea-Bisau","Guinea-Bissau","Guinee-Bissau","Guinea-Bissau"],
+["GNQ","Guinea Ecuatorial","Equatorial Guinea","Guinee Equatoriale","Aquatorialguinea"],
+["GUY","Guyana","Guyana","Guyane","Guyana"],
+["HTI","Haiti","Haiti","Haiti","Haiti"],
+["HND","Honduras","Honduras","Honduras","Honduras"],
+["HUN","Hungria","Hungary","Hongrie","Ungarn"],
+["IND","India","India","Inde","Indien"],
+["IDN","Indonesia","Indonesia","Indonesie","Indonesien"],
+["IRQ","Irak","Iraq","Irak","Irak"],
+["IRN","Iran","Iran","Iran","Iran"],
+["IRL","Irlanda","Ireland","Irlande","Irland"],
+["ISL","Islandia","Iceland","Islande","Island"],
+["ISR","Israel","Israel","Israel","Israel"],
+["ITA","Italia","Italy","Italie","Italien"],
+["JAM","Jamaica","Jamaica","Jamaique","Jamaika"],
+["JPN","Japon","Japan","Japon","Japan"],
+["JOR","Jordania","Jordan","Jordanie","Jordanien"],
+["KAZ","Kazajistan","Kazakhstan","Kazakhstan","Kasachstan"],
+["KEN","Kenia","Kenya","Kenya","Kenia"],
+["KGZ","Kirguistan","Kyrgyzstan","Kirghizistan","Kirgisistan"],
+["KIR","Kiribati","Kiribati","Kiribati","Kiribati"],
+["KWT","Kuwait","Kuwait","Koweit","Kuwait"],
+["LAO","Laos","Laos","Laos","Laos"],
+["LSO","Lesoto","Lesotho","Lesotho","Lesotho"],
+["LVA","Letonia","Latvia","Lettonie","Lettland"],
+["LBN","Libano","Lebanon","Liban","Libanon"],
+["LBR","Liberia","Liberia","Liberia","Liberia"],
+["LBY","Libia","Libya","Libye","Libyen"],
+["LIE","Liechtenstein","Liechtenstein","Liechtenstein","Liechtenstein"],
+["LTU","Lituania","Lithuania","Lituanie","Litauen"],
+["LUX","Luxemburgo","Luxembourg","Luxembourg","Luxemburg"],
+["MKD","Macedonia","North Macedonia","Macedoine","Nordmazedonien"],
+["MDG","Madagascar","Madagascar","Madagascar","Madagaskar"],
+["MYS","Malasia","Malaysia","Malaisie","Malaysia"],
+["MWI","Malawi","Malawi","Malawi","Malawi"],
+["MDV","Maldivas","Maldives","Maldives","Malediven"],
+["MLI","Mali","Mali","Mali","Mali"],
+["MLT","Malta","Malta","Malte","Malta"],
+["MAR","Marruecos","Morocco","Maroc","Marokko"],
+["MRT","Mauritania","Mauritania","Mauritanie","Mauretanien"],
+["MUS","Mauricio","Mauritius","Maurice","Mauritius"],
+["MEX","Mexico","Mexico","Mexique","Mexiko"],
+["MDA","Moldavia","Moldova","Moldavie","Moldawien"],
+["MCO","Monaco","Monaco","Monaco","Monaco"],
+["MNG","Mongolia","Mongolia","Mongolie","Mongolei"],
+["MNE","Montenegro","Montenegro","Montenegro","Montenegro"],
+["MOZ","Mozambique","Mozambique","Mozambique","Mosambik"],
+["MMR","Myanmar","Myanmar","Myanmar","Myanmar"],
+["NAM","Namibia","Namibia","Namibie","Namibia"],
+["NRU","Nauru","Nauru","Nauru","Nauru"],
+["NPL","Nepal","Nepal","Nepal","Nepal"],
+["NIC","Nicaragua","Nicaragua","Nicaragua","Nicaragua"],
+["NER","Niger","Niger","Niger","Niger"],
+["NGA","Nigeria","Nigeria","Nigeria","Nigeria"],
+["NOR","Noruega","Norway","Norvege","Norwegen"],
+["NZL","Nueva Zelanda","New Zealand","Nouvelle-Zelande","Neuseeland"],
+["OMN","Oman","Oman","Oman","Oman"],
+["NLD","Paises Bajos","Netherlands","Pays-Bas","Niederlande"],
+["PAK","Pakistan","Pakistan","Pakistan","Pakistan"],
+["PLW","Palau","Palau","Palaos","Palau"],
+["PAN","Panama","Panama","Panama","Panama"],
+["PNG","Papua Nueva Guinea","Papua New Guinea","Papouasie","Papua-Neuguinea"],
+["PRY","Paraguay","Paraguay","Paraguay","Paraguay"],
+["PER","Peru","Peru","Perou","Peru"],
+["POL","Polonia","Poland","Pologne","Polen"],
+["PRT","Portugal","Portugal","Portugal","Portugal"],
+["GBR","Reino Unido","United Kingdom","Royaume-Uni","Vereinigtes Konigreich"],
+["CAF","Republica Centroafricana","Central African Republic","Republique Centrafricaine","Zentralafrikanische Republik"],
+["CZE","Republica Checa","Czech Republic","Republique Tcheque","Tschechische Republik"],
+["DOM","Republica Dominicana","Dominican Republic","Republique Dominicaine","Dominikanische Republik"],
+["ROU","Rumania","Romania","Roumanie","Rumanien"],
+["RUS","Rusia","Russia","Russie","Russland"],
+["RWA","Ruanda","Rwanda","Rwanda","Ruanda"],
+["WSM","Samoa","Samoa","Samoa","Samoa"],
+["SMR","San Marino","San Marino","Saint-Marin","San Marino"],
+["STP","Santo Tome","Sao Tome","Sao Tome","Sao Tome"],
+["SAU","Arabia Saudi","Saudi Arabia","Arabie Saoudite","Saudi-Arabien"],
+["SEN","Senegal","Senegal","Senegal","Senegal"],
+["SRB","Serbia","Serbia","Serbie","Serbien"],
+["SYC","Seychelles","Seychelles","Seychelles","Seychellen"],
+["SLE","Sierra Leona","Sierra Leone","Sierra Leone","Sierra Leone"],
+["SGP","Singapur","Singapore","Singapour","Singapur"],
+["SYR","Siria","Syria","Syrie","Syrien"],
+["SOM","Somalia","Somalia","Somalie","Somalia"],
+["LKA","Sri Lanka","Sri Lanka","Sri Lanka","Sri Lanka"],
+["ZAF","Sudafrica","South Africa","Afrique du Sud","Sudafrika"],
+["SDN","Sudan","Sudan","Soudan","Sudan"],
+["SSD","Sudan del Sur","South Sudan","Soudan du Sud","Sudsudan"],
+["SWE","Suecia","Sweden","Suede","Schweden"],
+["CHE","Suiza","Switzerland","Suisse","Schweiz"],
+["SUR","Surinam","Suriname","Suriname","Surinam"],
+["SWZ","Esuatini","Eswatini","Eswatini","Eswatini"],
+["TJK","Tayikistan","Tajikistan","Tadjikistan","Tadschikistan"],
+["THA","Tailandia","Thailand","Thailande","Thailand"],
+["TWN","Taiwan","Taiwan","Taiwan","Taiwan"],
+["TZA","Tanzania","Tanzania","Tanzanie","Tansania"],
+["TLS","Timor Oriental","East Timor","Timor oriental","Osttimor"],
+["TGO","Togo","Togo","Togo","Togo"],
+["TON","Tonga","Tonga","Tonga","Tonga"],
+["TTO","Trinidad y Tobago","Trinidad and Tobago","Trinite-et-Tobago","Trinidad und Tobago"],
+["TUN","Tunez","Tunisia","Tunisie","Tunesien"],
+["TKM","Turkmenistan","Turkmenistan","Turkmenistan","Turkmenistan"],
+["TUR","Turquia","Turkey","Turquie","Turkei"],
+["TUV","Tuvalu","Tuvalu","Tuvalu","Tuvalu"],
+["UKR","Ucrania","Ukraine","Ukraine","Ukraine"],
+["UGA","Uganda","Uganda","Ouganda","Uganda"],
+["URY","Uruguay","Uruguay","Uruguay","Uruguay"],
+["UZB","Uzbekistan","Uzbekistan","Ouzbekistan","Usbekistan"],
+["VUT","Vanuatu","Vanuatu","Vanuatu","Vanuatu"],
+["VEN","Venezuela","Venezuela","Venezuela","Venezuela"],
+["VNM","Vietnam","Vietnam","Vietnam","Vietnam"],
+["YEM","Yemen","Yemen","Yemen","Jemen"],
+["ZMB","Zambia","Zambia","Zambie","Sambia"],
+["ZWE","Zimbabue","Zimbabwe","Zimbabwe","Simbabwe"]
+];
+
+const LANG_IDX={es:1,en:2,fr:3,de:4};
+
+function paisOpts(l){
+  const idx=LANG_IDX[l]||1;
+  return '<option value="">--</option>'+PAISES.map(p=>`<option value="${p[0]}">${p[idx]} (${p[0]})</option>`).join("");
+}
+
 const PAR={
   es:[["","-- Selecciona --"],["CY","Conyuge/pareja"],["HJ","Hijo/a"],["PM","Padre/madre"],["HR","Hermano/a"],["AB","Abuelo/a"],["NI","Nieto/a"],["TI","Tio/a"],["SB","Sobrino/a"],["SG","Suegro/a"],["YN","Yerno/nuera"],["CD","Cunado/a"],["TU","Tutor/a"],["OT","Otros"]],
   en:[["","-- Select --"],["CY","Spouse/partner"],["HJ","Son/daughter"],["PM","Father/mother"],["HR","Sibling"],["AB","Grandparent"],["NI","Grandchild"],["TI","Uncle/aunt"],["SB","Nephew/niece"],["SG","Parent-in-law"],["YN","Son/daughter-in-law"],["CD","Brother/sister-in-law"],["TU","Guardian"],["OT","Other"]],
@@ -119,22 +315,106 @@ const PAR={
   de:[["","-- Auswahlen --"],["CY","Ehepartner/Partner"],["HJ","Sohn/Tochter"],["PM","Vater/Mutter"],["HR","Geschwister"],["AB","Grosselternteil"],["NI","Enkelkind"],["TI","Onkel/Tante"],["SB","Neffe/Nichte"],["SG","Schwiegerelternteil"],["YN","Schwiegersohn/-tochter"],["CD","Schwager/Schwaegerin"],["TU","Vormund"],["OT","Andere"]]
 };
 const DOC={
-  es:[["D","DNI/NIF"],["N","NIE"],["P","Pasaporte"],["O","Otro documento"]],
-  en:[["D","DNI/NIF"],["N","NIE (Spain)"],["P","Passport"],["O","Other document"]],
-  fr:[["D","DNI/NIF"],["N","NIE (Espagne)"],["P","Passeport"],["O","Autre document"]],
-  de:[["D","DNI/NIF"],["N","NIE (Spanien)"],["P","Reisepass"],["O","Sonstiges"]]
+  es:[["D","DNI / NIF"],["N","NIE"],["P","Pasaporte"],["O","Otro documento"]],
+  en:[["D","DNI / NIF"],["N","NIE (Spain)"],["P","Passport"],["O","Other document"]],
+  fr:[["D","DNI / NIF"],["N","NIE (Espagne)"],["P","Passeport"],["O","Autre document"]],
+  de:[["D","DNI / NIF"],["N","NIE (Spanien)"],["P","Reisepass"],["O","Sonstiges"]]
 };
 const PAGO={
-  es:{"PLATF":"Airbnb (plataforma)","PLATF2":"VRBO (plataforma)","TARJT":"Tarjeta de credito","EFECT":"Efectivo","TRANS":"Transferencia","MOVIL":"Pago movil","DESTI":"Pago en destino","OTRO":"Otros"},
-  en:{"PLATF":"Airbnb (platform)","PLATF2":"VRBO (platform)","TARJT":"Credit card","EFECT":"Cash","TRANS":"Bank transfer","MOVIL":"Mobile payment","DESTI":"Pay on arrival","OTRO":"Other"},
-  fr:{"PLATF":"Airbnb (plateforme)","PLATF2":"VRBO (plateforme)","TARJT":"Carte de credit","EFECT":"Especes","TRANS":"Virement","MOVIL":"Paiement mobile","DESTI":"Paiement a l arrivee","OTRO":"Autre"},
-  de:{"PLATF":"Airbnb (Plattform)","PLATF2":"VRBO (Plattform)","TARJT":"Kreditkarte","EFECT":"Bargeld","TRANS":"Ueberweisung","MOVIL":"Mobile Zahlung","DESTI":"Zahlung bei Ankunft","OTRO":"Sonstiges"}
+  es:{"PLATF":"Airbnb","PLATF2":"VRBO","TARJT":"Tarjeta de credito","EFECT":"Efectivo","TRANS":"Transferencia","MOVIL":"Pago movil","DESTI":"Pago en destino","OTRO":"Otros"},
+  en:{"PLATF":"Airbnb","PLATF2":"VRBO","TARJT":"Credit card","EFECT":"Cash","TRANS":"Bank transfer","MOVIL":"Mobile payment","DESTI":"Pay on arrival","OTRO":"Other"},
+  fr:{"PLATF":"Airbnb","PLATF2":"VRBO","TARJT":"Carte de credit","EFECT":"Especes","TRANS":"Virement","MOVIL":"Paiement mobile","DESTI":"Paiement a l arrivee","OTRO":"Autre"},
+  de:{"PLATF":"Airbnb","PLATF2":"VRBO","TARJT":"Kreditkarte","EFECT":"Bargeld","TRANS":"Ueberweisung","MOVIL":"Mobile Zahlung","DESTI":"Zahlung bei Ankunft","OTRO":"Sonstiges"}
 };
 const TX={
-  es:{wp1:"Estamos encantados de que se aloje en nuestro Fantastico Duplex Estilo Loft en Barcelona y esperamos que disfrute de una estancia comoda y agradable.",wp2:"De conformidad con la normativa local, todos los huespedes deben rellenar un formulario de registro con sus datos personales. Esta informacion se comunicara a las autoridades locales.",wp3:"Le rogamos que rellene el formulario lo antes posible incluyendo todos los miembros del grupo. Los menores tambien deben registrarse.",wp4:"Sus datos se trataran con cuidado y usados estrictamente para el registro legal. Ante cualquier duda, contacte con nosotros.",wth:"Gracias por su colaboracion. Disfrute de su estancia!",res:"Datos de la reserva",ref:"Referencia reserva *",ent:"Fecha entrada *",sal:"Fecha salida *",hin:"Hora entrada *",hout:"Hora salida *",num:"Numero de huespedes *",tpago:"Forma de pago *",sel:"Selecciona...",cont:"Continuar",hue:"Huesped",de:"de",tit:"Titular",aco:"Acompanante",nom:"Nombre *",a1:"Primer apellido *",a2:"Segundo apellido",sx:"Sexo",td:"Tipo documento *",nd:"No documento *",sop:"No soporte doc.",fexp:"Fecha expedicion",fn:"Fecha nacimiento *",nac:"Nacionalidad ISO *",res2:"Direccion *",cp:"Codigo postal *",loc:"Localidad *",pais:"Pais ISO *",em:"Email",tel:"Telefono",htel:"Cualquier formato - se convierte automaticamente",par:"Relacion con titular *",sig:"Siguiente huesped",fin:"Finalizar",ok:"Registro completado",rdy:"Pulsa el boton para enviar los datos.",dl:"Enviar datos",sending:"Enviando datos...",sent:"Datos enviados correctamente",fallback:"Error de envio. Por favor contacta con nosotros.",nw:"Nuevo registro",sm:"Masculino",sf:"Femenino",so:"Otro",af:"Por favor rellena todos los campos obligatorios (*)",ar:"Por favor completa todos los datos de la reserva."},
-  en:{wp1:"We are delighted to have you staying at our Fantastic Duplex Estilo Loft in Barcelona and hope you enjoy a comfortable and pleasant stay.",wp2:"In accordance with local regulations, all guests must complete a registration form. This information will be communicated to local authorities as required by law.",wp3:"Please complete the form as soon as possible, including all members of your group. Minors must also be registered.",wp4:"Your data will be handled with care and used strictly for legal registration. If you have any questions, please contact us.",wth:"Thank you for your cooperation. Enjoy your stay!",res:"Booking details",ref:"Booking reference *",ent:"Check-in date *",sal:"Check-out date *",hin:"Check-in time *",hout:"Check-out time *",num:"Number of guests *",tpago:"Payment method *",sel:"Select...",cont:"Continue",hue:"Guest",de:"of",tit:"Lead guest",aco:"Companion",nom:"First name *",a1:"First surname *",a2:"Second surname",sx:"Sex",td:"Document type *",nd:"Document number *",sop:"Support number",fexp:"Issue date",fn:"Date of birth *",nac:"Nationality ISO *",res2:"Address *",cp:"Postal code *",loc:"City *",pais:"Country ISO *",em:"Email",tel:"Phone",htel:"Any format accepted - auto-converted",par:"Relation to lead guest *",sig:"Next guest",fin:"Finish",ok:"Registration complete",rdy:"Press the button to send your data.",dl:"Send data",sending:"Sending data...",sent:"Data sent successfully",fallback:"Send error. Please contact us.",nw:"New registration",sm:"Male",sf:"Female",so:"Other",af:"Please fill in all required fields (*)",ar:"Please complete all booking details."},
-  fr:{wp1:"Nous sommes ravis de vous accueillir dans notre Fantastique Duplex Estilo Loft a Barcelone et esperons que vous passerez un sejour agreable.",wp2:"Conformement a la reglementation locale, tous les voyageurs doivent remplir un formulaire d enregistrement. Ces informations seront communiquees aux autorites locales.",wp3:"Veuillez remplir le formulaire des que possible, y compris pour tous les membres du groupe. Les mineurs doivent egalement etre enregistres.",wp4:"Vos donnees seront utilisees strictement a des fins legales. Pour toute question, contactez-nous.",wth:"Merci pour votre collaboration. Profitez de votre sejour!",res:"Details reservation",ref:"Reference reservation *",ent:"Date arrivee *",sal:"Date depart *",hin:"Heure arrivee *",hout:"Heure depart *",num:"Nombre voyageurs *",tpago:"Mode paiement *",sel:"Selectionner...",cont:"Continuer",hue:"Voyageur",de:"sur",tit:"Voyageur principal",aco:"Accompagnant",nom:"Prenom *",a1:"Premier nom *",a2:"Deuxieme nom",sx:"Sexe",td:"Type document *",nd:"Numero document *",sop:"Numero support",fexp:"Date emission",fn:"Date naissance *",nac:"Nationalite ISO *",res2:"Adresse *",cp:"Code postal *",loc:"Ville *",pais:"Pays ISO *",em:"Email",tel:"Telephone",htel:"Tout format accepte - converti automatiquement",par:"Lien voyageur principal *",sig:"Voyageur suivant",fin:"Terminer",ok:"Enregistrement termine",rdy:"Appuyez sur le bouton pour envoyer vos donnees.",dl:"Envoyer les donnees",sending:"Envoi en cours...",sent:"Donnees envoyees avec succes",fallback:"Erreur d envoi. Veuillez nous contacter.",nw:"Nouvel enregistrement",sm:"Masculin",sf:"Feminin",so:"Autre",af:"Veuillez remplir tous les champs obligatoires (*)",ar:"Veuillez completer tous les details."},
-  de:{wp1:"Wir freuen uns, Sie in unserem Fantastischen Duplex Estilo Loft in Barcelona begrussen zu durfen und hoffen, dass Sie einen angenehmen Aufenthalt geniessen.",wp2:"Gemas den ortlichen Vorschriften mussen alle Gaste ein Anmeldeformular ausfuellen. Diese Informationen werden an die Behorden weitergeleitet.",wp3:"Bitte fullen Sie das Formular so bald wie moglich aus, auch fur alle Mitreisenden. Minderjahrige mussen ebenfalls registriert werden.",wp4:"Ihre Daten werden ausschliesslich fur die Registrierung verwendet. Bei Fragen kontaktieren Sie uns.",wth:"Vielen Dank. Geniessen Sie Ihren Aufenthalt!",res:"Buchungsdetails",ref:"Buchungsreferenz *",ent:"Anreisedatum *",sal:"Abreisedatum *",hin:"Anreisezeit *",hout:"Abreisezeit *",num:"Anzahl Gaste *",tpago:"Zahlungsart *",sel:"Auswahlen...",cont:"Weiter",hue:"Gast",de:"von",tit:"Hauptgast",aco:"Begleitung",nom:"Vorname *",a1:"Erster Nachname *",a2:"Zweiter Nachname",sx:"Geschlecht",td:"Dokumententyp *",nd:"Dokumentennummer *",sop:"Seriennummer",fexp:"Ausstellungsdatum",fn:"Geburtsdatum *",nac:"Nationalitat ISO *",res2:"Anschrift *",cp:"Postleitzahl *",loc:"Stadt *",pais:"Land ISO *",em:"E-Mail",tel:"Telefon",htel:"Jedes Format - wird automatisch konvertiert",par:"Verhaltnis Hauptgast *",sig:"Nachster Gast",fin:"Abschliessen",ok:"Registrierung abgeschlossen",rdy:"Druecken Sie den Knopf, um die Daten zu senden.",dl:"Daten senden",sending:"Daten werden gesendet...",sent:"Daten erfolgreich gesendet",fallback:"Sendefehler. Bitte kontaktieren Sie uns.",nw:"Neue Registrierung",sm:"Mannlich",sf:"Weiblich",so:"Andere",af:"Bitte alle Pflichtfelder ausfuellen (*)",ar:"Bitte alle Buchungsdetails ausfuellen."}
+  es:{wp1:"Estamos encantados de que se aloje en nuestro Fantastico Duplex Estilo Loft en Barcelona y esperamos que disfrute de una estancia comoda y agradable.",wp2:"De conformidad con la normativa local, todos los huespedes deben rellenar un formulario de registro con sus datos personales. Esta informacion se comunicara a las autoridades locales.",wp3:"Le rogamos que rellene el formulario lo antes posible incluyendo todos los miembros del grupo. Los menores tambien deben registrarse.",wp4:"Sus datos se trataran con cuidado y usados estrictamente para el registro legal. Ante cualquier duda, contacte con nosotros.",wth:"Gracias por su colaboracion. Disfrute de su estancia!",
+  res:"Datos de la reserva",ref:"Referencia reserva *",ent:"Fecha entrada *",sal:"Fecha salida *",hin:"Hora entrada *",hout:"Hora salida *",num:"Numero de huespedes *",tpago:"Forma de pago *",sel:"Selecciona...",cont:"Continuar",
+  hue:"Huesped",de:"de",tit:"Titular",aco:"Acompanante",
+  nom:"Nombre *",a1:"Primer apellido *",a2:"Segundo apellido",sx:"Sexo",
+  td:"Tipo documento *",nd:"No documento *",ndh:"Formato incorrecto para el tipo de documento",
+  sop:"No soporte (DNI/NIE)",soph:"9 caracteres exactos. Opcional",
+  fexp:"Fecha expedicion",fexph:"No puede ser fecha futura. Opcional",
+  fn:"Fecha nacimiento *",fnh:"No puede ser fecha futura",
+  nac:"Nacionalidad *",res2:"Direccion *",cp:"Codigo postal *",cph:"5 digitos para Espana",
+  loc:"Localidad *",pais:"Pais residencia *",
+  em:"Email",tel:"Telefono",telh:"Cualquier formato, se convierte automaticamente",
+  par:"Relacion con titular *",
+  sig:"Siguiente huesped",fin:"Finalizar",
+  ok:"Datos enviados correctamente",rdy:"",
+  dl:"Enviar datos",sending:"Enviando datos...",sent:"Datos enviados correctamente",fallback:"Error de envio. Por favor contacta con nosotros.",
+  nw:"Nuevo registro",sm:"Masculino",sf:"Femenino",so:"Otro",
+  af:"Por favor corrige los errores marcados en rojo",ar:"Por favor completa todos los datos de la reserva.",
+  errSalida:"La fecha de salida debe ser posterior a la de entrada",
+  errFuturo:"No puede ser una fecha futura",
+  errDNI:"DNI invalido (8 numeros + letra correcta)",
+  errNIE:"NIE invalido (X/Y/Z + 7 numeros + letra correcta)",
+  errCP:"El codigo postal debe tener 5 digitos"},
+  en:{wp1:"We are delighted to have you staying at our Fantastic Duplex Estilo Loft in Barcelona and hope you enjoy a comfortable and pleasant stay.",wp2:"In accordance with local regulations, all guests must complete a registration form. This information will be communicated to local authorities as required by law.",wp3:"Please complete the form as soon as possible, including all members of your group. Minors must also be registered.",wp4:"Your data will be handled with care and used strictly for legal registration. If you have any questions, please contact us.",wth:"Thank you for your cooperation. Enjoy your stay!",
+  res:"Booking details",ref:"Booking reference *",ent:"Check-in date *",sal:"Check-out date *",hin:"Check-in time *",hout:"Check-out time *",num:"Number of guests *",tpago:"Payment method *",sel:"Select...",cont:"Continue",
+  hue:"Guest",de:"of",tit:"Lead guest",aco:"Companion",
+  nom:"First name *",a1:"First surname *",a2:"Second surname",sx:"Sex",
+  td:"Document type *",nd:"Document number *",ndh:"Incorrect format for this document type",
+  sop:"Support number (DNI/NIE)",soph:"Exactly 9 characters. Optional",
+  fexp:"Issue date",fexph:"Cannot be a future date. Optional",
+  fn:"Date of birth *",fnh:"Cannot be a future date",
+  nac:"Nationality *",res2:"Address *",cp:"Postal code *",cph:"5 digits for Spain",
+  loc:"City *",pais:"Country *",
+  em:"Email",tel:"Phone",telh:"Any format, auto-converted",
+  par:"Relation to lead guest *",
+  sig:"Next guest",fin:"Finish",
+  ok:"Data sent successfully",rdy:"",
+  dl:"Send data",sending:"Sending data...",sent:"Data sent successfully",fallback:"Send error. Please contact us.",
+  nw:"New registration",sm:"Male",sf:"Female",so:"Other",
+  af:"Please correct the errors marked in red",ar:"Please complete all booking details.",
+  errSalida:"Check-out must be after check-in",
+  errFuturo:"Cannot be a future date",
+  errDNI:"Invalid DNI (8 numbers + correct letter)",
+  errNIE:"Invalid NIE (X/Y/Z + 7 numbers + correct letter)",
+  errCP:"Postal code must have 5 digits"},
+  fr:{wp1:"Nous sommes ravis de vous accueillir dans notre Fantastique Duplex Estilo Loft a Barcelone et esperons que vous passerez un sejour agreable.",wp2:"Conformement a la reglementation locale, tous les voyageurs doivent remplir un formulaire d enregistrement. Ces informations seront communiquees aux autorites locales.",wp3:"Veuillez remplir le formulaire des que possible, y compris pour tous les membres du groupe. Les mineurs doivent egalement etre enregistres.",wp4:"Vos donnees seront utilisees strictement a des fins legales. Pour toute question, contactez-nous.",wth:"Merci pour votre collaboration. Profitez de votre sejour!",
+  res:"Details reservation",ref:"Reference reservation *",ent:"Date arrivee *",sal:"Date depart *",hin:"Heure arrivee *",hout:"Heure depart *",num:"Nombre voyageurs *",tpago:"Mode paiement *",sel:"Selectionner...",cont:"Continuer",
+  hue:"Voyageur",de:"sur",tit:"Voyageur principal",aco:"Accompagnant",
+  nom:"Prenom *",a1:"Premier nom *",a2:"Deuxieme nom",sx:"Sexe",
+  td:"Type document *",nd:"Numero document *",ndh:"Format incorrect pour ce type de document",
+  sop:"Numero support (DNI/NIE)",soph:"Exactement 9 caracteres. Optionnel",
+  fexp:"Date emission",fexph:"Ne peut pas etre une date future. Optionnel",
+  fn:"Date naissance *",fnh:"Ne peut pas etre une date future",
+  nac:"Nationalite *",res2:"Adresse *",cp:"Code postal *",cph:"5 chiffres pour Espagne",
+  loc:"Ville *",pais:"Pays *",
+  em:"Email",tel:"Telephone",telh:"Tout format, converti automatiquement",
+  par:"Lien voyageur principal *",
+  sig:"Voyageur suivant",fin:"Terminer",
+  ok:"Donnees envoyees avec succes",rdy:"",
+  dl:"Envoyer les donnees",sending:"Envoi en cours...",sent:"Donnees envoyees avec succes",fallback:"Erreur d envoi. Veuillez nous contacter.",
+  nw:"Nouvel enregistrement",sm:"Masculin",sf:"Feminin",so:"Autre",
+  af:"Veuillez corriger les erreurs en rouge",ar:"Veuillez completer tous les details.",
+  errSalida:"Le depart doit etre apres l arrivee",
+  errFuturo:"Ne peut pas etre une date future",
+  errDNI:"DNI invalide (8 chiffres + lettre correcte)",
+  errNIE:"NIE invalide (X/Y/Z + 7 chiffres + lettre correcte)",
+  errCP:"Le code postal doit avoir 5 chiffres"},
+  de:{wp1:"Wir freuen uns, Sie in unserem Fantastischen Duplex Estilo Loft in Barcelona begrussen zu durfen und hoffen, dass Sie einen angenehmen Aufenthalt geniessen.",wp2:"Gemas den ortlichen Vorschriften mussen alle Gaste ein Anmeldeformular ausfuellen. Diese Informationen werden an die Behorden weitergeleitet.",wp3:"Bitte fullen Sie das Formular so bald wie moglich aus, auch fur alle Mitreisenden. Minderjahrige mussen ebenfalls registriert werden.",wp4:"Ihre Daten werden ausschliesslich fur die Registrierung verwendet. Bei Fragen kontaktieren Sie uns.",wth:"Vielen Dank. Geniessen Sie Ihren Aufenthalt!",
+  res:"Buchungsdetails",ref:"Buchungsreferenz *",ent:"Anreisedatum *",sal:"Abreisedatum *",hin:"Anreisezeit *",hout:"Abreisezeit *",num:"Anzahl Gaste *",tpago:"Zahlungsart *",sel:"Auswahlen...",cont:"Weiter",
+  hue:"Gast",de:"von",tit:"Hauptgast",aco:"Begleitung",
+  nom:"Vorname *",a1:"Erster Nachname *",a2:"Zweiter Nachname",sx:"Geschlecht",
+  td:"Dokumententyp *",nd:"Dokumentennummer *",ndh:"Falsches Format fur diesen Dokumenttyp",
+  sop:"Seriennummer (DNI/NIE)",soph:"Genau 9 Zeichen. Optional",
+  fexp:"Ausstellungsdatum",fexph:"Darf kein zukunftiges Datum sein. Optional",
+  fn:"Geburtsdatum *",fnh:"Darf kein zukunftiges Datum sein",
+  nac:"Nationalitat *",res2:"Anschrift *",cp:"Postleitzahl *",cph:"5 Ziffern fur Spanien",
+  loc:"Stadt *",pais:"Land *",
+  em:"E-Mail",tel:"Telefon",telh:"Jedes Format, wird automatisch konvertiert",
+  par:"Verhaltnis Hauptgast *",
+  sig:"Nachster Gast",fin:"Abschliessen",
+  ok:"Daten erfolgreich gesendet",rdy:"",
+  dl:"Daten senden",sending:"Daten werden gesendet...",sent:"Daten erfolgreich gesendet",fallback:"Sendefehler. Bitte kontaktieren Sie uns.",
+  nw:"Neue Registrierung",sm:"Mannlich",sf:"Weiblich",so:"Andere",
+  af:"Bitte korrigieren Sie die rot markierten Fehler",ar:"Bitte alle Buchungsdetails ausfuellen.",
+  errSalida:"Abreise muss nach Anreise sein",
+  errFuturo:"Darf kein zukunftiges Datum sein",
+  errDNI:"Ungultige DNI (8 Ziffern + richtiger Buchstabe)",
+  errNIE:"Ungultige NIE (X/Y/Z + 7 Ziffern + richtiger Buchstabe)",
+  errCP:"Postleitzahl muss 5 Ziffern haben"}
 };
 
 let lang="es",nG=0,cur=0,gD=[],seq=1;
@@ -143,7 +423,7 @@ const t=k=>TX[lang][k]||"";
 function sL(l){lang=l;document.querySelectorAll(".lb").forEach((b,i)=>b.classList.toggle("on",["es","en","fr","de"][i]===l));aL();}
 
 function aL(){
-  const m={wp1:"wp1",wp2:"wp2",wp3:"wp3",wp4:"wp4",wth:"wth",lres:"res",lref:"ref",lin:"ent",lout:"sal",lhin:"hin",lhout:"hout",lnum:"num",ltpago:"tpago",osel:"sel",bcont:"cont",lok:"ok",lrdy:"rdy",bdl:"dl",bnw:"nw"};
+  const m={wp1:"wp1",wp2:"wp2",wp3:"wp3",wp4:"wp4",wth:"wth",lres:"res",lref:"ref",lin:"ent",lout:"sal",lhin:"hin",lhout:"hout",lnum:"num",ltpago:"tpago",osel:"sel",bcont:"cont",bdl:"dl",bnw:"nw"};
   for(const[id,k]of Object.entries(m)){const el=document.getElementById(id);if(el)el.textContent=t(k);}
   const pg=PAGO[lang];
   Object.keys(pg).forEach(v=>{const el=document.getElementById("op_"+v);if(el)el.textContent=pg[v];});
@@ -151,15 +431,54 @@ function aL(){
 
 function upProg(tot,c){const p=document.getElementById("prog");p.innerHTML="";for(let i=0;i<tot+2;i++){const d=document.createElement("div");d.className="dot"+(i<=c?" on":"");p.appendChild(d);}}
 
-function go(){
-  const ref=document.getElementById("ref").value.trim();
+// VALIDACIONES
+function today(){return new Date().toISOString().split("T")[0];}
+
+function valFechas(){
   const fi=document.getElementById("fIn").value;
   const fo=document.getElementById("fOut").value;
-  const n=parseInt(document.getElementById("nG").value);
-  if(!ref||!fi||!fo||!n){alert(t("ar"));return;}
-  nG=n;cur=0;gD=[];
-  document.getElementById("s0").className="step";
-  showG();
+  const err=document.getElementById("fechaErr");
+  if(fi&&fo&&fo<=fi){err.textContent=t("errSalida");err.style.display="block";return false;}
+  err.style.display="none";return true;
+}
+
+function valLetraDNI(num,letra){
+  const L="TRWAGMYFPDXBNJZSQVHLCKE";
+  return L[parseInt(num)%23]===letra.toUpperCase();
+}
+
+function valDNI(doc){
+  const m=doc.toUpperCase().match(/^(\d{8})([A-Z])$/);
+  if(!m)return false;
+  return valLetraDNI(m[1],m[2]);
+}
+
+function valNIE(doc){
+  const m=doc.toUpperCase().match(/^([XYZ])(\d{7})([A-Z])$/);
+  if(!m)return false;
+  const prefix={"X":"0","Y":"1","Z":"2"};
+  return valLetraDNI(prefix[m[1]]+m[2],m[3]);
+}
+
+function valDoc(td,nd){
+  if(!nd)return false;
+  if(td==="D")return valDNI(nd);
+  if(td==="N")return valNIE(nd);
+  if(td==="P")return nd.length>=6&&nd.length<=20;
+  if(td==="O")return nd.length>=1&&nd.length<=14;
+  return true;
+}
+
+function valFecha(val){
+  if(!val)return{ok:false,msg:""};
+  if(val>today())return{ok:false,msg:t("errFuturo")};
+  return{ok:true,msg:""};
+}
+
+function valCP(cp,pais){
+  if(!cp)return false;
+  if((pais||"").toUpperCase()==="ESP")return /^\d{5}$/.test(cp);
+  return cp.length>=1;
 }
 
 function normTel(raw){
@@ -167,8 +486,28 @@ function normTel(raw){
   let s=raw.trim();
   if(s.startsWith("+"))s="00"+s.slice(1);
   s=s.replace(/[\s\-\(\)\.]/g,"");
-  if(s.startsWith("00"))return s;
   return s;
+}
+
+function setFeedback(id,isOk,msg){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const hint=document.getElementById(id+"_hint");
+  el.className=el.className.replace(/\b(ok|err)\b/g,"").trim();
+  if(isOk){el.classList.add("ok");if(hint){hint.className="hint ok";hint.textContent="";}}
+  else{el.classList.add("err");if(hint){hint.className="hint err";hint.textContent=msg||"";}}
+}
+
+function go(){
+  const ref=document.getElementById("ref").value.trim();
+  const fi=document.getElementById("fIn").value;
+  const fo=document.getElementById("fOut").value;
+  const n=parseInt(document.getElementById("nG").value);
+  if(!ref||!fi||!fo||!n){alert(t("ar"));return;}
+  if(!valFechas())return;
+  nG=n;cur=0;gD=[];
+  document.getElementById("s0").className="step";
+  showG();
 }
 
 function showG(){
@@ -176,6 +515,7 @@ function showG(){
   const isT=cur===0;
   const pOpts=PAR[lang].map(([v,lb])=>`<option value="${v}">${lb}</option>`).join("");
   const dOpts=DOC[lang].map(([v,lb])=>`<option value="${v}">${lb}</option>`).join("");
+  const paisOptsStr=paisOpts(lang);
   const sg=document.getElementById("sg");
   sg.innerHTML=`<div class="gc">
     <div class="gt">${t("hue")} ${cur+1} ${t("de")} ${nG} <span class="${isT?"bt":"ba"}">${isT?t("tit"):t("aco")}</span></div>
@@ -188,36 +528,122 @@ function showG(){
       <div class="fi"><label>${t("sx")}</label><select id="gsx"><option value="">--</option><option value="M">${t("sm")}</option><option value="F">${t("sf")}</option><option value="O">${t("so")}</option></select><div class="hint">Opcional</div></div>
     </div>
     <div class="tc">
-      <div class="fi"><label>${t("td")}</label><select id="gtd">${dOpts}</select></div>
-      <div class="fi"><label>${t("nd")}</label><input type="text" id="gnd" placeholder="12345678Z"/></div>
+      <div class="fi"><label>${t("td")}</label><select id="gtd" onchange="onTdChange()">${dOpts}</select></div>
+      <div class="fi"><label>${t("nd")}</label><input type="text" id="gnd" onblur="onNdBlur()"/><div class="hint" id="gnd_hint">${t("ndh")}</div></div>
     </div>
     <div class="tc">
-      <div class="fi"><label>${t("sop")}</label><input type="text" id="gsop" maxlength="9"/><div class="hint">Solo DNI/NIE. 9 car. Opcional</div></div>
-      <div class="fi"><label>${t("fexp")}</label><input type="date" id="gfexp"/><div class="hint">Opcional</div></div>
+      <div class="fi"><label>${t("sop")}</label><input type="text" id="gsop" maxlength="9" onblur="onSopBlur()"/><div class="hint" id="gsop_hint">${t("soph")}</div></div>
+      <div class="fi"><label>${t("fexp")}</label><input type="date" id="gfexp" max="${today()}" onchange="onFexpChange()"/><div class="hint" id="gfexp_hint">${t("fexph")}</div></div>
     </div>
     <div class="tc">
-      <div class="fi"><label>${t("fn")}</label><input type="date" id="gfn"/></div>
-      <div class="fi"><label>${t("nac")}</label><input type="text" id="gnac" maxlength="3"/><div class="hint">ESP USA FRA DEU GBR...</div></div>
+      <div class="fi"><label>${t("fn")}</label><input type="date" id="gfn" max="${today()}" onchange="onFnChange()"/><div class="hint" id="gfn_hint">${t("fnh")}</div></div>
+      <div class="fi"><label>${t("nac")}</label><select id="gnac">${paisOptsStr}</select></div>
     </div>
     <div class="fi"><label>${t("res2")}</label><input type="text" id="gres"/></div>
     <div class="tc">
-      <div class="fi"><label>${t("cp")}</label><input type="text" id="gcp"/></div>
+      <div class="fi"><label>${t("cp")}</label><input type="text" id="gcp" onblur="onCpBlur()"/><div class="hint" id="gcp_hint">${t("cph")}</div></div>
       <div class="fi"><label>${t("loc")}</label><input type="text" id="gloc"/></div>
     </div>
-    <div class="fi"><label>${t("pais")}</label><input type="text" id="gpais" maxlength="3"/><div class="hint">ISO 3166-1 Alfa-3</div></div>
+    <div class="fi"><label>${t("pais")}</label><select id="gpais" onchange="onCpBlur()">${paisOptsStr}</select></div>
     <div class="fi"><label>${t("em")}</label><input type="email" id="gem"/><div class="hint">Opcional (necesario email o telefono)</div></div>
-    <div class="fi"><label>${t("tel")}</label><input type="tel" id="gtel" onblur="this.value=normTel(this.value)"/><div class="hint">${t("htel")}</div></div>
+    <div class="fi"><label>${t("tel")}</label><input type="tel" id="gtel" onblur="this.value=normTel(this.value)"/><div class="hint">${t("telh")}</div></div>
     ${!isT?`<div class="fi"><label>${t("par")}</label><select id="gpar">${pOpts}</select></div>`:`<input type="hidden" id="gpar" value=""/>`}
   </div>
   <button class="bp" onclick="svG()">${cur<nG-1?t("sig"):t("fin")}</button>`;
   sg.className="step on";
 }
 
+function onTdChange(){
+  const td=v("gtd");
+  const ndEl=document.getElementById("gnd");
+  if(ndEl&&ndEl.value)onNdBlur();
+  // mostrar hint segun tipo
+  const hint=document.getElementById("gnd_hint");
+  if(!hint)return;
+  const hints={D:"Ej: 12345678Z",N:"Ej: X1234567L",P:"Ej: AAB123456",O:"Max 14 caracteres"};
+  hint.textContent=hints[td]||"";
+  hint.className="hint";
+}
+
+function onNdBlur(){
+  const td=v("gtd");const nd=v("gnd");
+  if(!nd)return;
+  const ok=valDoc(td,nd);
+  setFeedback("gnd",ok,ok?"":t("ndh"));
+}
+
+function onSopBlur(){
+  const sop=v("gsop");
+  if(!sop)return;
+  setFeedback("gsop",sop.length===9,sop.length===9?"":t("soph"));
+}
+
+function onFexpChange(){
+  const val=v("gfexp");
+  if(!val)return;
+  const r=valFecha(val);
+  setFeedback("gfexp",r.ok,r.msg);
+}
+
+function onFnChange(){
+  const val=v("gfn");
+  if(!val)return;
+  const r=valFecha(val);
+  setFeedback("gfn",r.ok,r.msg);
+}
+
+function onCpBlur(){
+  const cp=v("gcp");const pais=v("gpais");
+  if(!cp)return;
+  const ok=valCP(cp,pais);
+  setFeedback("gcp",ok,ok?"":t("errCP"));
+}
+
 function svG(){
+  // Validar campos obligatorios
   const req=["gnom","ga1","gtd","gnd","gfn","gnac","gres","gcp","gloc","gpais"];
-  const d={nom:v("gnom"),a1:v("ga1"),a2:v("ga2")||"",sx:v("gsx")||"",td:v("gtd")||"P",nd:v("gnd"),sop:v("gsop")||"",fexp:v("gfexp")||"",fn:v("gfn"),nac:v("gnac"),res:v("gres"),cp:v("gcp"),loc:v("gloc"),pais:v("gpais"),em:v("gem")||"",tel:normTel(v("gtel")),par:v("gpar")||""};
-  if(req.some(id=>!v(id))){alert(t("af"));return;}
-  if(!d.em&&!d.tel){alert(t("af")+" (email / "+t("tel")+")");return;}
+  let hasErr=false;
+  req.forEach(id=>{if(!v(id))hasErr=true;});
+  if(hasErr){alert(t("af"));return;}
+
+  const td=v("gtd");const nd=v("gnd");
+  if(!valDoc(td,nd)){
+    document.getElementById("gnd").classList.add("err");
+    alert(t("af"));return;
+  }
+
+  const fn=v("gfn");
+  if(valFecha(fn).ok===false){
+    document.getElementById("gfn").classList.add("err");
+    alert(t("af"));return;
+  }
+
+  const fexp=v("gfexp");
+  if(fexp&&!valFecha(fexp).ok){
+    document.getElementById("gfexp").classList.add("err");
+    alert(t("af"));return;
+  }
+
+  const sop=v("gsop");
+  if(sop&&sop.length!==9){
+    document.getElementById("gsop").classList.add("err");
+    alert(t("af"));return;
+  }
+
+  const cp=v("gcp");const pais=v("gpais");
+  if(!valCP(cp,pais)){
+    document.getElementById("gcp").classList.add("err");
+    alert(t("af"));return;
+  }
+
+  const em=v("gem");const tel=normTel(v("gtel"));
+  if(!em&&!tel){alert(t("af")+" (email / "+t("tel")+")");return;}
+
+  // Obtener nombre del pais seleccionado (ISO)
+  const nacISO=v("gnac");
+  const paisISO=v("gpais");
+
+  const d={nom:v("gnom"),a1:v("ga1"),a2:v("ga2")||"",sx:v("gsx")||"",td,nd,sop:sop||"",fexp:fexp||"",fn:fn,nac:nacISO,res:v("gres"),cp,loc:v("gloc"),pais:paisISO,em:em||"",tel,par:v("gpar")||""};
   gD.push(d);cur++;
   if(cur<nG)showG();
   else{document.getElementById("sg").className="step";genTxt();}
@@ -236,15 +662,15 @@ function genTxt(){
   const hOut=fmtH(document.getElementById("hOut").value||"12:00");
   const tpago=document.getElementById("tpago").value||"PLATF";
   const fn=`${COD_EST}.${String(seq).padStart(3,"0")}.txt`;
-  const {d:nd,h:nh}=nowDT();
+  const {d:nd2,h:nh}=nowDT();
   const n=gD.length;
-  const L1=`1|${COD_EST}|${NOM_EST}|${nd}|${nh}|${n}|V24`;
+  const L1=`1|${COD_EST}|${NOM_EST}|${nd2}|${nh}|${n}|V24`;
   const lines=[L1];
   gD.forEach((g,i)=>{
     const td=g.td||"P";
     const esSpain=(g.pais||"").toUpperCase()==="ESP";
     const sop=(td==="D"||td==="N")&&g.sop&&g.sop.length===9?g.sop.toUpperCase():"";
-    const fields=["2",(td==="D")?g.nd.toUpperCase():"",(td!=="D")?g.nd.toUpperCase():"",td,fmtD(g.fexp),g.a1.toUpperCase(),g.a2.toUpperCase(),g.nom.toUpperCase(),g.sx,fmtD(g.fn),(g.nac||"").toUpperCase(),fmtD(fIn),hIn,fmtD(fOut),hOut,nd,"R",ref,String(n),"1","S",tpago,g.tel,(i===0)?"":g.par,g.em,sop,g.res,esSpain?PROV_BCN:"",esSpain?MUN_BCN:"",esSpain?"":g.loc,(g.pais||"").toUpperCase(),g.cp];
+    const fields=["2",(td==="D")?g.nd.toUpperCase():"",(td!=="D")?g.nd.toUpperCase():"",td,fmtD(g.fexp),g.a1.toUpperCase(),g.a2.toUpperCase(),g.nom.toUpperCase(),g.sx,fmtD(g.fn),(g.nac||"").toUpperCase(),fmtD(fIn),hIn,fmtD(fOut),hOut,nd2,"R",ref,String(n),"1","S",tpago,g.tel,(i===0)?"":g.par,g.em,sop,g.res,esSpain?PROV_BCN:"",esSpain?MUN_BCN:"",esSpain?"":g.loc,(g.pais||"").toUpperCase(),g.cp];
     lines.push(fields.join("|"));
   });
   window._tc=lines.join("\r\n");
@@ -260,21 +686,10 @@ async function enviarDatos(){
   status.style.color="#555";
   status.textContent=t("sending");
   try{
-    const resp=await fetch(WEBHOOK,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({filename:window._fn,content:window._tc,timestamp:new Date().toISOString()})
-    });
-    if(resp.ok){
-      status.style.color="#0F6E56";
-      status.textContent=t("sent");
-      btn.style.display="none";
-    }else{throw new Error(resp.status);}
-  }catch(e){
-    status.style.color="#c0392b";
-    status.textContent=t("fallback");
-    btn.disabled=false;
-  }
+    const resp=await fetch(WEBHOOK,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({filename:window._fn,content:window._tc,timestamp:new Date().toISOString()})});
+    if(resp.ok){status.style.color="#0F6E56";status.textContent=t("sent");btn.style.display="none";}
+    else{throw new Error(resp.status);}
+  }catch(e){status.style.color="#c0392b";status.textContent=t("fallback");btn.disabled=false;}
   seq=seq<999?seq+1:1;
 }
 
@@ -284,6 +699,8 @@ function rst(){
   ["ref","fIn","fOut"].forEach(id=>document.getElementById(id).value="");
   document.getElementById("nG").value="";
   document.getElementById("sendStatus").textContent="";
+  const btn=document.getElementById("btnSend");
+  if(btn){btn.style.display="";btn.disabled=false;}
   gD=[];cur=0;upProg(1,0);
 }
 
